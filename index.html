@@ -570,6 +570,12 @@
 
   <script>
     const ADMIN_PASSWORD = '7896'; 
+    
+    // GitHub Configuration - REPLACE WITH YOUR INFO
+    const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN_HERE'; // Paste your token here
+    const GITHUB_USERNAME = 'YOUR_GITHUB_USERNAME'; // Your GitHub username
+    const REPO_NAME = 'portfolio';
+
     let currentView = 'about';
     let currentPath = [];
     let currentUploadTarget = null;
@@ -587,6 +593,43 @@
       },
       resume: null
     };
+
+    // GitHub API functions
+    async function uploadFileToGitHub(file, folderPath = '') {
+        const path = folderPath ? `${folderPath}/${file.name}` : file.name;
+        
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${path}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: `Add ${file.name} to portfolio`,
+                    content: await fileToBase64(file)
+                })
+            });
+            
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Upload failed. Check console for details.');
+            return null;
+        }
+    }
+
+    function fileToBase64(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
 
     // Load saved data
     function loadData() {
@@ -792,6 +835,8 @@
       let filesHTML = '';
       currentData.files.forEach((file, index) => {
         const icon = getFileIcon(file.type);
+        // Use GitHub download URL if available, otherwise fallback to simulated download
+        const downloadUrl = file.download_url || '#';
         filesHTML += `
           <div class="file-item">
             <span>${icon}</span>
@@ -994,16 +1039,33 @@
       document.getElementById('fileInput').click();
     }
 
-    function handleFolderFileUpload(files) {
+    async function handleFolderFileUpload(files) {
       let currentData = getCurrentFolderData();
-      files.forEach(file => {
-        currentData.files.push({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          lastModified: file.lastModified
-        });
-      });
+      
+      for (let file of files) {
+        // Upload to GitHub
+        const result = await uploadFileToGitHub(file, currentPath.join('/'));
+        
+        if (result && result.content) {
+          // Add to local data with GitHub URL
+          currentData.files.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            lastModified: file.lastModified,
+            download_url: result.content.download_url,
+            github_path: result.content.path
+          });
+        } else {
+          // Fallback to local storage if GitHub upload fails
+          currentData.files.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            lastModified: file.lastModified
+          });
+        }
+      }
       
       saveData();
       render();
@@ -1034,24 +1096,34 @@
     function downloadResume() {
       if (!portfolioData.resume) return;
       
-      alert(`Downloading: ${portfolioData.resume.name}\n\nIn a production environment, this would download the actual file.`);
-      
-      const link = document.createElement('a');
-      link.download = portfolioData.resume.name;
-      link.href = '#';
-      link.click();
+      if (portfolioData.resume.download_url) {
+        // Real download from GitHub
+        window.open(portfolioData.resume.download_url, '_blank');
+      } else {
+        // Simulated download
+        alert(`Downloading: ${portfolioData.resume.name}\n\nFile would be downloaded from GitHub.`);
+        const link = document.createElement('a');
+        link.download = portfolioData.resume.name;
+        link.href = '#';
+        link.click();
+      }
     }
 
     function downloadFile(index) {
       let currentData = getCurrentFolderData();
       const file = currentData.files[index];
       
-      alert(`Downloading: ${file.name}\n\nIn a production environment, this would download the actual file.`);
-      
-      const link = document.createElement('a');
-      link.download = file.name;
-      link.href = '#';
-      link.click();
+      if (file.download_url) {
+        // Real download from GitHub
+        window.open(file.download_url, '_blank');
+      } else {
+        // Simulated download
+        alert(`Downloading: ${file.name}\n\nFile would be downloaded from GitHub.`);
+        const link = document.createElement('a');
+        link.download = file.name;
+        link.href = '#';
+        link.click();
+      }
     }
 
     function deleteFolder(index) {
