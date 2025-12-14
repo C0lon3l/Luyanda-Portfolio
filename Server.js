@@ -160,6 +160,22 @@ app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// ========== STATIC FILE SERVING ==========
+app.use(express.static(__dirname));
+
+// ========== HTML PAGE ROUTES (ADDED HERE) ==========
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'MyWeb.html'));
+});
+
+app.get('/public', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public-portfolio.html'));
+});
+
 // ========== PERFORMANCE MONITORING ==========
 app.use((req, res, next) => {
     const start = Date.now();
@@ -903,7 +919,7 @@ app.delete('/folders/:id', async (req, res) => {
 });
 
 // 9. Health check endpoint (optimized)
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
