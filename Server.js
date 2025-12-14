@@ -18,7 +18,7 @@ const isVercel = process.env.VERCEL === '1';
 
 // ========== SUPABASE SETUP ==========
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_KEY; // Should be service_role key
 const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret-change-in-production';
 const ADMIN_INIT_KEY = process.env.ADMIN_INIT_KEY || 'init-key-change-this';
 
@@ -35,17 +35,12 @@ if (!JWT_SECRET || JWT_SECRET === 'your-fallback-secret-change-in-production') {
     console.warn('⚠️  WARNING: Using default JWT secret. Set JWT_SECRET in environment for production.');
 }
 
-// Create Supabase client with connection pooling AND RLS HEADER
+// Create Supabase client with SERVICE_ROLE key (bypasses RLS)
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: false },
-    global: {
-        headers: {
-            'x-application-context': 'server' // CRITICAL FOR RLS POLICIES
-        }
-    }
+    auth: { persistSession: false }
 });
 
-console.log('✅ Connected to Supabase with RLS headers');
+console.log('✅ Connected to Supabase with service_role key');
 
 // ========== PERFORMANCE OPTIMIZATIONS ==========
 // Response caching
@@ -235,7 +230,6 @@ app.post('/api/admin/init', async (req, res) => {
                         id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
                         username TEXT UNIQUE NOT NULL,
                         password_hash TEXT NOT NULL,
-                        failed_attempts INTEGER DEFAULT 0,
                         last_login TIMESTAMPTZ,
                         created_at TIMESTAMPTZ DEFAULT NOW(),
                         updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -370,9 +364,9 @@ app.post('/api/admin/logout', (req, res) => {
     });
 });
 
-// ========== NEW: MISSING API ENDPOINTS FOR ADMIN PANEL ==========
+// ========== ADMIN API ENDPOINTS ==========
 
-// 1. GET RESUME DATA (Admin endpoint)
+// 1. GET RESUME DATA (Admin endpoint) - FIXED
 app.get('/api/resume', verifyAdminToken, async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -382,15 +376,18 @@ app.get('/api/resume', verifyAdminToken, async (req, res) => {
             .order('created_at', { ascending: false })
             .limit(1);
         
-        if (error) throw error;
-        res.json(data && data.length > 0 ? data[0] : {});
+        if (error) {
+            console.error('Resume fetch error:', error);
+            return res.status(500).json({ error: 'Failed to load resume: ' + error.message });
+        }
+        res.json(data && data.length > 0 ? data[0] : { message: 'No resume found' });
     } catch (error) {
         console.error('Resume fetch error:', error);
         res.status(500).json({ error: 'Failed to load resume' });
     }
 });
 
-// 2. GET FOLDERS (Admin endpoint)
+// 2. GET FOLDERS (Admin endpoint) - FIXED NULL HANDLING
 app.get('/api/folders', verifyAdminToken, async (req, res) => {
     try {
         const { category, parentPath } = req.query;
@@ -398,13 +395,22 @@ app.get('/api/folders', verifyAdminToken, async (req, res) => {
         let query = supabase.from('folders').select('*');
         
         if (category) query = query.eq('category', category);
+        
+        // Handle parentPath properly (empty string or null)
         if (parentPath !== undefined) {
-            query = query.eq('parent_path', parentPath || null);
+            if (parentPath === '' || parentPath === 'null' || parentPath === null) {
+                query = query.or('parent_path.is.null,parent_path.eq.');
+            } else {
+                query = query.eq('parent_path', parentPath);
+            }
         }
         
         const { data, error } = await query.order('name', { ascending: true });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Folders fetch error:', error);
+            return res.status(500).json({ error: 'Failed to load folders: ' + error.message });
+        }
         res.json(data || []);
     } catch (error) {
         console.error('Folders fetch error:', error);
@@ -412,7 +418,7 @@ app.get('/api/folders', verifyAdminToken, async (req, res) => {
     }
 });
 
-// 3. GET FILES (Admin endpoint)
+// 3. GET FILES (Admin endpoint) - FIXED NULL HANDLING
 app.get('/api/files', verifyAdminToken, async (req, res) => {
     try {
         const { category, folderPath } = req.query;
@@ -420,13 +426,22 @@ app.get('/api/files', verifyAdminToken, async (req, res) => {
         let query = supabase.from('files').select('*');
         
         if (category) query = query.eq('category', category);
+        
+        // Handle folderPath properly (empty string or null)
         if (folderPath !== undefined) {
-            query = query.eq('folder_path', folderPath || null);
+            if (folderPath === '' || folderPath === 'null' || folderPath === null) {
+                query = query.or('folder_path.is.null,folder_path.eq.');
+            } else {
+                query = query.eq('folder_path', folderPath);
+            }
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Files fetch error:', error);
+            return res.status(500).json({ error: 'Failed to load files: ' + error.message });
+        }
         res.json(data || []);
     } catch (error) {
         console.error('Files fetch error:', error);
@@ -434,47 +449,119 @@ app.get('/api/files', verifyAdminToken, async (req, res) => {
     }
 });
 
-// 5. Protected admin data endpoint (FIXED RESPONSE STRUCTURE)
+// 4. UPLOAD FILES ENDPOINT (Frontend calls this) - CRITICAL ADDITION
+app.post('/api/upload', verifyAdminToken, upload.array('files', 10), async (req, res) => {
+    try {
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ error: 'No files uploaded' });
+        }
+
+        const { category = 'projects', folderPath = '' } = req.body;
+        const uploadedFiles = [];
+
+        for (const file of req.files) {
+            const fileName = `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+            const storagePath = `${category}/${folderPath ? folderPath + '/' : ''}${fileName}`.replace(/\/\//g, '/');
+            
+            // Upload to Supabase Storage
+            const { error: storageError } = await supabase.storage
+                .from('portfolio-files')
+                .upload(storagePath, file.buffer, {
+                    contentType: file.mimetype,
+                    upsert: true
+                });
+
+            if (storageError) {
+                console.error('Storage upload error:', storageError);
+                throw new Error(`Storage error: ${storageError.message}`);
+            }
+
+            // Save to database
+            const { data: dbData, error: dbError } = await supabase
+                .from('files')
+                .insert({
+                    filename: fileName,
+                    original_name: file.originalname,
+                    file_type: file.mimetype,
+                    file_size: file.size,
+                    folder_path: folderPath || null,
+                    category: category,
+                    upload_date: new Date().toISOString(),
+                    uploaded_by: 'admin'
+                })
+                .select()
+                .single();
+
+            if (dbError) {
+                console.error('Database insert error:', dbError);
+                // Try to clean up storage if DB insert failed
+                await supabase.storage.from('portfolio-files').remove([storagePath]);
+                throw new Error(`Database error: ${dbError.message}`);
+            }
+
+            uploadedFiles.push({
+                id: dbData.id,
+                filename: fileName,
+                original_name: file.originalname,
+                file_type: file.mimetype,
+                file_size: file.size,
+                folder_path: folderPath,
+                category: category,
+                upload_date: dbData.upload_date
+            });
+        }
+
+        // Clear relevant cache
+        clearCacheForCategory(category, folderPath);
+        if (category === 'resume') {
+            responseCache.delete('/api/resume');
+            responseCache.delete('/resume');
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Uploaded ${uploadedFiles.length} file(s) successfully`,
+            files: uploadedFiles 
+        });
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ 
+            error: 'Upload failed',
+            message: error.message 
+        });
+    }
+});
+
+// 5. ADMIN DATA ENDPOINT - FIXED
 app.get('/api/admin/data', verifyAdminToken, cacheMiddleware(), async (req, res) => {
     try {
-        // Get all files data (admin sees everything)
-        const { data: files, error: filesError } = await supabase
-            .from('files')
-            .select('*')
-            .order('upload_date', { ascending: false });
+        // Get all files and folders
+        const [{ data: files, error: filesError }, 
+               { data: folders, error: foldersError }] = await Promise.all([
+            supabase.from('files').select('*').order('upload_date', { ascending: false }),
+            supabase.from('folders').select('*').order('name')
+        ]);
 
-        // Get all folders
-        const { data: folders, error: foldersError } = await supabase
-            .from('folders')
-            .select('*')
-            .order('name');
+        if (filesError || foldersError) {
+            console.error('Admin data error:', filesError || foldersError);
+            return res.status(500).json({ 
+                error: 'Database error',
+                details: (filesError || foldersError).message 
+            });
+        }
 
         // Get storage usage stats
         const { data: storageData } = await supabase.storage
             .from('portfolio-files')
             .list();
 
-        if (filesError || foldersError) {
-            console.error('Admin data error:', filesError || foldersError);
-            return res.status(500).json({ error: 'Database error' });
-        }
-
-        // Get counts
-        const { count: totalFiles } = await supabase
-            .from('files')
-            .select('*', { count: 'exact', head: true });
-
-        const { count: totalFolders } = await supabase
-            .from('folders')
-            .select('*', { count: 'exact', head: true });
-
-        // FIXED: Return proper structure for frontend
         res.json({
             files: files || [],
             folders: folders || [],
             stats: {
-                totalFiles: totalFiles || 0,
-                totalFolders: totalFolders || 0,
+                totalFiles: files?.length || 0,
+                totalFolders: folders?.length || 0,
                 storageItems: storageData?.length || 0,
                 cacheSize: responseCache.size,
                 serverTime: new Date().toISOString()
@@ -489,7 +576,7 @@ app.get('/api/admin/data', verifyAdminToken, cacheMiddleware(), async (req, res)
 
 // ========== PROTECTED ADMIN ENDPOINTS ==========
 
-// 1. Protected upload
+// 1. Protected upload (alternative endpoint)
 app.post('/api/secure/upload', verifyAdminToken, upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
@@ -542,6 +629,7 @@ app.post('/api/secure/upload', verifyAdminToken, upload.single('file'), async (r
 
         clearCacheForCategory(category, folderPath);
         if (category === 'resume') {
+            responseCache.delete('/api/resume');
             responseCache.delete('/resume');
         }
 
@@ -602,6 +690,7 @@ app.delete('/api/secure/files/:id', verifyAdminToken, async (req, res) => {
 
         clearCacheForCategory(fileInfo.category, fileInfo.folder_path);
         if (fileInfo.category === 'resume') {
+            responseCache.delete('/api/resume');
             responseCache.delete('/resume');
         }
 
@@ -618,12 +707,10 @@ app.delete('/api/secure/files/:id', verifyAdminToken, async (req, res) => {
     }
 });
 
-// ========== EXISTING PUBLIC ENDPOINTS (KEPT FOR COMPATIBILITY) ==========
+// ========== EXISTING PUBLIC ENDPOINTS (Backward Compatibility) ==========
 
 // 1. Upload file (public but could be protected)
 app.post('/upload', upload.single('file'), async (req, res) => {
-    // Same as before, but you might want to protect this
-    // Currently leaving it public for backward compatibility
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -674,6 +761,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         clearCacheForCategory(category, folderPath);
         if (category === 'resume') {
+            responseCache.delete('/api/resume');
             responseCache.delete('/resume');
         }
 
@@ -797,10 +885,9 @@ app.get('/files/:filename', async (req, res) => {
             .getPublicUrl(filePath);
 
         res.setHeader('Cache-Control', 'public, max-age=3600');
-        res.setHeader('X-Accel-Redirect', urlData.publicUrl);
         
-        const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${filename}`.replace(/\/\//g, '/');
-        
+        // Use direct URL for Supabase storage
+        const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/${filePath}`;
         res.redirect(301, directUrl);
 
     } catch (error) {
@@ -853,6 +940,7 @@ app.delete('/files/:id', async (req, res) => {
 
         clearCacheForCategory(fileInfo.category, fileInfo.folder_path);
         if (fileInfo.category === 'resume') {
+            responseCache.delete('/api/resume');
             responseCache.delete('/resume');
         }
 
@@ -881,7 +969,7 @@ app.post('/folders', async (req, res) => {
             .from('folders')
             .insert({
                 name: name.trim(),
-                parent_path: parentPath,
+                parent_path: parentPath || null,
                 category: category
             })
             .select()
@@ -909,12 +997,20 @@ app.get('/folders', cacheMiddleware(), async (req, res) => {
     const { category, parentPath = '' } = req.query;
 
     try {
-        const { data: folders, error } = await supabase
+        let query = supabase
             .from('folders')
             .select('*')
-            .eq('category', category)
-            .eq('parent_path', parentPath)
-            .order('name');
+            .eq('category', category);
+            
+        if (parentPath !== undefined) {
+            if (parentPath === '' || parentPath === 'null') {
+                query = query.or('parent_path.is.null,parent_path.eq.');
+            } else {
+                query = query.eq('parent_path', parentPath);
+            }
+        }
+        
+        const { data: folders, error } = await query.order('name');
 
         if (error) {
             console.error('Supabase error:', error);
@@ -1034,20 +1130,18 @@ app.use((req, res) => {
 // ========== START SERVER ==========
 if (require.main === module) {
     const server = app.listen(PORT, () => {
-        console.log('='.repeat(50));
-        console.log('🚀 PORTFOLIO SERVER STARTED!');
-        console.log('='.repeat(50));
+        console.log('='.repeat(60));
+        console.log('🚀 PORTFOLIO SERVER STARTED SUCCESSFULLY!');
+        console.log('='.repeat(60));
         console.log(`📍 Local: http://localhost:${PORT}`);
-        console.log(`📍 Login: http://localhost:${PORT}/`);
-        console.log(`📍 Admin: http://localhost:${PORT}/admin (protected)`);
+        console.log(`📍 Admin: http://localhost:${PORT}/admin`);
         console.log(`📍 Public: http://localhost:${PORT}/public`);
         console.log(`☁️  Environment: ${isVercel ? 'Vercel' : 'Local'}`);
-        console.log(`🔐 Authentication: ${JWT_SECRET !== 'your-fallback-secret-change-in-production' ? 'Enabled' : '⚠️ Using default secret'}`);
-        console.log(`📦 Storage: Supabase (portfolio-files)`);
-        console.log(`🗄️  Database: Supabase PostgreSQL`);
+        console.log(`🔐 Authentication: ${JWT_SECRET !== 'your-fallback-secret-change-in-production' ? '✅ Enabled' : '⚠️ Using default secret'}`);
+        console.log(`🔑 Supabase Key: ${SUPABASE_KEY ? '✅ Loaded' : '❌ Missing'}`);
         console.log(`⚡ Performance: Caching enabled (${CACHE_TTL/1000}s TTL)`);
-        console.log('='.repeat(50));
-        console.log('📋 Available endpoints:');
+        console.log('='.repeat(60));
+        console.log('📋 AVAILABLE ENDPOINTS:');
         console.log('  POST /api/admin/login    - Admin login');
         console.log('  POST /api/admin/init     - Initialize admin (run once)');
         console.log('  GET  /api/admin/verify   - Verify token');
@@ -1055,8 +1149,9 @@ if (require.main === module) {
         console.log('  GET  /api/resume         - Resume data (protected)');
         console.log('  GET  /api/folders        - Folders data (protected)');
         console.log('  GET  /api/files          - Files data (protected)');
-        console.log('  POST /api/secure/upload  - Protected upload');
-        console.log('='.repeat(50));
+        console.log('  POST /api/upload         - Upload files (protected)');
+        console.log('  POST /api/secure/upload  - Alternative upload (protected)');
+        console.log('='.repeat(60));
     });
 
     // Graceful shutdown
