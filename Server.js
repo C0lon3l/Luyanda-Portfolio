@@ -35,14 +35,17 @@ if (!JWT_SECRET || JWT_SECRET === 'your-fallback-secret-change-in-production') {
     console.warn('⚠️  WARNING: Using default JWT secret. Set JWT_SECRET in environment for production.');
 }
 
-// Create Supabase client with connection pooling
+// Create Supabase client with connection pooling AND RLS HEADER
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false
+    auth: { persistSession: false },
+    global: {
+        headers: {
+            'x-application-context': 'server' // CRITICAL FOR RLS POLICIES
+        }
     }
 });
 
-console.log('✅ Connected to Supabase');
+console.log('✅ Connected to Supabase with RLS headers');
 
 // ========== PERFORMANCE OPTIMIZATIONS ==========
 // Response caching
@@ -367,7 +370,71 @@ app.post('/api/admin/logout', (req, res) => {
     });
 });
 
-// 5. Protected admin data endpoint
+// ========== NEW: MISSING API ENDPOINTS FOR ADMIN PANEL ==========
+
+// 1. GET RESUME DATA (Admin endpoint)
+app.get('/api/resume', verifyAdminToken, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('files')
+            .select('*')
+            .eq('category', 'resume')
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (error) throw error;
+        res.json(data && data.length > 0 ? data[0] : {});
+    } catch (error) {
+        console.error('Resume fetch error:', error);
+        res.status(500).json({ error: 'Failed to load resume' });
+    }
+});
+
+// 2. GET FOLDERS (Admin endpoint)
+app.get('/api/folders', verifyAdminToken, async (req, res) => {
+    try {
+        const { category, parentPath } = req.query;
+        
+        let query = supabase.from('folders').select('*');
+        
+        if (category) query = query.eq('category', category);
+        if (parentPath !== undefined) {
+            query = query.eq('parent_path', parentPath || null);
+        }
+        
+        const { data, error } = await query.order('name', { ascending: true });
+        
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Folders fetch error:', error);
+        res.status(500).json({ error: 'Failed to load folders' });
+    }
+});
+
+// 3. GET FILES (Admin endpoint)
+app.get('/api/files', verifyAdminToken, async (req, res) => {
+    try {
+        const { category, folderPath } = req.query;
+        
+        let query = supabase.from('files').select('*');
+        
+        if (category) query = query.eq('category', category);
+        if (folderPath !== undefined) {
+            query = query.eq('folder_path', folderPath || null);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        console.error('Files fetch error:', error);
+        res.status(500).json({ error: 'Failed to load files' });
+    }
+});
+
+// 5. Protected admin data endpoint (FIXED RESPONSE STRUCTURE)
 app.get('/api/admin/data', verifyAdminToken, cacheMiddleware(), async (req, res) => {
     try {
         // Get all files data (admin sees everything)
@@ -401,6 +468,7 @@ app.get('/api/admin/data', verifyAdminToken, cacheMiddleware(), async (req, res)
             .from('folders')
             .select('*', { count: 'exact', head: true });
 
+        // FIXED: Return proper structure for frontend
         res.json({
             files: files || [],
             folders: folders || [],
@@ -731,7 +799,6 @@ app.get('/files/:filename', async (req, res) => {
         res.setHeader('Cache-Control', 'public, max-age=3600');
         res.setHeader('X-Accel-Redirect', urlData.publicUrl);
         
-        // FIXED: Use SUPABASE_URL variable instead of hardcoded URL
         const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${filename}`.replace(/\/\//g, '/');
         
         res.redirect(301, directUrl);
@@ -741,7 +808,6 @@ app.get('/files/:filename', async (req, res) => {
         
         if (error.message === 'Database query timeout') {
             console.log('⚠️ Database timeout, trying direct URL');
-            // FIXED: Use SUPABASE_URL variable instead of hardcoded URL
             const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/resume/${filename}`;
             res.redirect(301, directUrl);
         } else {
@@ -986,6 +1052,9 @@ if (require.main === module) {
         console.log('  POST /api/admin/init     - Initialize admin (run once)');
         console.log('  GET  /api/admin/verify   - Verify token');
         console.log('  GET  /api/admin/data     - Admin data (protected)');
+        console.log('  GET  /api/resume         - Resume data (protected)');
+        console.log('  GET  /api/folders        - Folders data (protected)');
+        console.log('  GET  /api/files          - Files data (protected)');
         console.log('  POST /api/secure/upload  - Protected upload');
         console.log('='.repeat(50));
     });
