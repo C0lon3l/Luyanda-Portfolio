@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Luyanda Portfolio - Admin</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Poppins:wght@300;400;600;700&display=swap');
+
+    :root {
+      --bg-start: #0f172a;
+      --bg-middle: #1e293b;
+      --bg-end: #334155;
+      --card: rgba(30, 41, 59, 0.95);
+      --text: #f1f5f9;
+      --nav: rgba(15, 23, 42, 0.9);
+      --header: rgba(30, 41, 59, 0.95);
+      --highlight: #ff6b6b;
+      --accent: #4ecdc4;
+      --folder-bg: linear-gradient(145deg, #1e293b, #0f172a);
+      --footer-bg: linear-gradient(145deg, #1e293b, #0f172a);
+      --footer-text: #f1f5f9;
+      --dropzone-text: #e2e8f0;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --success: #48bb78;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(145deg, var(--bg-start), var(--bg-middle), var(--bg-end));
+      background-size: 400% 400%;
+      animation: gradientBG 20s ease infinite;
+      color: var(--text);
+      transition: all 0.4s ease;
+      scroll-behavior: smooth;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientBG {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
+    }
+
+    header {
+      background: var(--header);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+      box-shadow: 0 8px 25px var(--shadow);
+      border-bottom-left-radius: 25px;
+      border-bottom-right-radius: 25px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    
+    header h1 { font-size: 3em; margin: 0; letter-spacing: 1.5px; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+    header p { font-size: 1.3em; margin-top: 10px; font-weight: 400; opacity: 0.9; }
+
+    nav {
+      background: var(--nav);
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      padding: 15px;
+      align-items: center;
+      border-radius: 0 0 20px 20px;
+      box-shadow: 0 4px 15px var(--shadow);
+      margin-bottom: 40px;
+      backdrop-filter: blur(10px);
+      flex-wrap: wrap;
+    }
+    
+    .nav-link { 
+      color: white; 
+      text-decoration: none; 
+      font-weight: 600; 
+      padding: 10px 20px; 
+      border-radius: 12px; 
+      transition: all 0.3s; 
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      font-size: inherit;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s;
+    }
+    
+    .nav-link.active, .nav-link:hover { 
+      background: rgba(255, 255, 255, 0.15); 
+      color: #fff; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+    }
+    
+    .nav-link.active::after, .nav-link:hover::after { width: 100%; }
+
+    .section { 
+      max-width: 1000px; 
+      margin: 50px auto; 
+      background: var(--card); 
+      padding: 40px; 
+      border-radius: 20px; 
+      box-shadow: 0 12px 30px var(--shadow); 
+      transition: all 0.4s; 
+      position: relative; 
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+    
+    .section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: linear-gradient(90deg, var(--highlight), var(--accent));
+    }
+    
+    .section h2 { 
+      font-size: 2.2em; 
+      margin-bottom: 25px; 
+      color: var(--highlight);
+      position: relative;
+      display: inline-block;
+    }
+    
+    .section h2::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 0;
+      width: 50%;
+      height: 3px;
+      background: var(--accent);
+    }
+
+    /* About Section Styles */
+    .about-content {
+      font-size: 1.1em;
+      line-height: 1.8;
+    }
+
+    .about-section {
+      margin-bottom: 40px;
+    }
+
+    .about-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .about-section h3 {
+      color: var(--accent);
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .about-section h3::before {
+      font-size: 1.2em;
+    }
+
+    .intro h3::before { content: '👋'; }
+    .truth h3::before { content: '💡'; }
+    .journey h3::before { content: '🚀'; }
+    .beyond h3::before { content: '🎨'; }
+    .now h3::before { content: '🌟'; }
+
+    .highlight-box {
+      background: linear-gradient(145deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+      padding: 25px;
+      border-radius: 15px;
+      border-left: 4px solid var(--highlight);
+      margin: 20px 0;
+    }
+
+    .quote {
+      font-style: italic;
+      text-align: center;
+      font-size: 1.2em;
+      margin: 30px 0;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .skills-pill {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 5px;
+      font-size: 0.9em;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .contact-links {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 40px;
+      flex-wrap: wrap;
+    }
+
+    .contact-btn {
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      padding: 12px 25px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .contact-btn:hover {
+      background: #3db8ac;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    }
+
+    .contact-btn.primary {
+      background: var(--highlight);
+    }
+
+    .contact-btn.primary:hover {
+      background: #ff5252;
+    }
+
+    .breadcrumb {
+      margin-bottom: 20px;
+      font-size: 0.95em;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb span {
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .breadcrumb span:hover {
+      color: var(--highlight);
+      text-decoration: underline;
+    }
+
+    .breadcrumb-separator {
+      color: var(--text);
+      opacity: 0.5;
+    }
+
+    .folder { 
+      border-radius: 18px; 
+      margin-bottom: 25px; 
+      margin-top: 15px;
+      position: relative; 
+      box-shadow: 0 8px 25px var(--shadow); 
+      background: var(--folder-bg); 
+      color: #fff; 
+      font-weight: 700; 
+      text-shadow: 1px 1px 4px rgba(0,0,0,0.3); 
+      transition: all 0.3s; 
+      padding: 25px; 
+      overflow: hidden;
+      cursor: pointer;
+    }
+    
+    .folder::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+      pointer-events: none;
+    }
+    
+    .folder:hover { 
+      transform: translateY(-7px); 
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25); 
+    }
+    
+    .folder h3 { 
+      margin: 0; 
+      font-size: 1.5em; 
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+    }
+    
+    .folder h3::before { content: '📁'; margin-right: 10px; font-size: 1.2em; }
+
+    .file-item { 
+      padding: 12px 15px; 
+      border-bottom: 1px solid rgba(255,255,255,0.1); 
+      transition: all 0.3s; 
+      border-radius: 8px;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.2);
+    }
+    
+    .file-item::before { content: '📄'; margin-right: 10px; }
+    
+    .file-item span { flex-grow: 1; }
+    
+    .file-item:hover { background: rgba(255,255,255,0.05); padding-left: 20px; transform: translateX(5px); }
+
+    .folder-item { 
+      padding: 15px 20px; 
+      border-bottom: 1px solid rgba(255,255,255,0.1); 
+      transition: all 0.3s; 
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    
+    .folder-item::before { content: '📁'; margin-right: 10px; font-size: 1.2em; }
+    
+    .folder-item:hover { background: rgba(255,255,255,0.05); padding-left: 25px; transform: translateX(5px); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text);
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    .empty-state::before {
+      content: '📂';
+      display: block;
+      font-size: 4em;
+      margin-bottom: 15px;
+    }
+
+    .delete-btn {
+      background: #e53e3e;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+
+    .delete-btn:hover {
+      background: #c53030;
+      transform: scale(1.05);
+    }
+
+    .insert-btn { 
+      cursor: pointer; 
+      background: var(--success); 
+      color: white; 
+      border: none; 
+      padding: 12px 20px; 
+      border-radius: 10px; 
+      transition: all 0.3s; 
+      font-weight: 600; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 2;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .insert-btn::before { content: '+'; font-size: 1.2em; }
+    
+    .insert-btn:hover { background: #38a169; box-shadow: 0 6px 18px rgba(0,0,0,0.25); transform: translateY(-2px); }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .dropzone { 
+      border: 2px dashed rgba(136, 136, 136, 0.5); 
+      border-radius: 14px; 
+      padding: 30px; 
+      text-align: center; 
+      margin-top: 15px; 
+      color: var(--dropzone-text); 
+      font-style: italic; 
+      transition: all 0.3s; 
+      background: rgba(255,255,255,0.05); 
+      font-weight: 500; 
+      position: relative;
+      cursor: pointer;
+    }
+    
+    .dropzone::before { content: '⬆️'; font-size: 2em; display: block; margin-bottom: 10px; }
+    
+    .dropzone.dragover { background: rgba(78, 205, 196, 0.2); border-color: var(--accent); color: var(--accent); }
+
+    /* Resume specific styles */
+    .resume-container {
+      text-align: center;
+      padding: 30px;
+    }
+
+    .resume-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .action-btn:hover {
+      background: #3db8ac;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    }
+
+    .action-btn.view {
+      background: var(--highlight);
+    }
+
+    .action-btn.view:hover {
+      background: #ff5252;
+    }
+
+    .no-resume {
+      text-align: center;
+      padding: 50px 20px;
+      color: var(--text);
+      opacity: 0.7;
+      font-style: italic;
+    }
+
+    .no-resume::before {
+      content: '📄';
+      font-size: 3em;
+      display: block;
+      margin-bottom: 15px;
+    }
+
+    .resume-info {
+      background: rgba(0,0,0,0.2);
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .resume-info h3 {
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: #e53e3e;
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      background: #38a169;
+    }
+
+    .toast.info {
+      background: #3182ce;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    .logout-btn {
+      margin-left: auto;
+      background: rgba(255, 107, 107, 0.2) !important;
+    }
+
+    .logout-btn:hover {
+      background: rgba(255, 107, 107, 0.3) !important;
+    }
+
+    footer { 
+      background: var(--footer-bg); 
+      color: var(--footer-text); 
+      padding: 40px; 
+      text-align: center; 
+      font-weight: 600; 
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3); 
+      box-shadow: 0 8px 25px var(--shadow); 
+      border-top-left-radius: 25px; 
+      border-top-right-radius: 25px; 
+      margin-top: 80px; 
+      backdrop-filter: blur(10px);
+    }
+    
+    footer span { 
+      font-family: 'Courier New', monospace; 
+      font-size: 1.4em; 
+      padding: 6px 15px; 
+      border-radius: 8px; 
+      background: linear-gradient(90deg, var(--highlight), var(--accent));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    input[type='file'] { display: none; }
+
+    @media (max-width: 768px) {
+      header h1 { font-size: 2.2em; }
+      header p { font-size: 1.1em; }
+      nav { gap: 15px; padding: 12px; }
+      .nav-link { padding: 8px 15px; font-size: 0.9em; }
+      .section { padding: 25px; margin: 30px 15px; }
+      .section h2 { font-size: 1.8em; }
+      .folder { padding: 20px; }
+      .resume-actions { flex-direction: column; }
+      .action-btn { width: 100%; justify-content: center; }
+      .contact-links { flex-direction: column; }
+      .contact-btn { width: 100%; justify-content: center; }
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .folder, .file-item, .folder-item { animation: fadeIn 0.5s ease; }
+
+    .section.highlight { animation: highlightFade 1s ease forwards; }
+    @keyframes highlightFade { 0% { background-color: rgba(255, 107, 107, 0.15); } 100% { background-color: transparent; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Luyanda Sonopo</h1>
+    <p>Developer • Writer • Creative • Admin</p>
+  </header>
+
+  <nav>
+    <button class="nav-link" onclick="navigateTo('about')" class="active">About</button>
+    <button class="nav-link" onclick="navigateToHome()">Dashboard</button>
+    <button class="nav-link" onclick="enterFolder('projects')">Projects</button>
+    <button class="nav-link" onclick="enterFolder('practice')">Practice Code</button>
+    <button class="nav-link" onclick="navigateTo('resume')">Resume</button>
+    <button class="nav-link logout-btn" onclick="logout()">
+      🔒 Logout
+    </button>
+  </nav>
+
+  <div id="mainContent"></div>
+
+  <footer>
+    <p>© 2025 <span>Luyanda Sonopo</span></p>
+    <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.7;">
+      Admin Access • Full Control
+    </p>
+  </footer>
+
+  <input type="file" id="fileInput" multiple>
+
+  <script>
+    // ========== CONFIGURATION ==========
+    const ADMIN_PASSWORD = '7896';
+    // Using relative URLs (same origin as server)
+
+    console.log('🚀 Environment: Admin Portal');
+
+    let currentView = 'about';
+    let currentPath = [];
+    let currentUploadTarget = null;
+    let folders = [];
+    let files = [];
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Check server health
+    async function checkServerHealth() {
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch('/api/health');
+        if (response.ok) {
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('❌ Server connection failed:', error);
+        return false;
+      }
+    }
+
+    // Verify admin access
+    async function verifyAdminAccess(action = 'perform this action') {
+      const storedAccess = sessionStorage.getItem('portfolioAccess');
+      if (storedAccess === 'admin') {
+        return true;
+      }
+      
+      const password = prompt(`Enter admin password to ${action}:`);
+      if (password === ADMIN_PASSWORD) {
+        return true;
+      } else {
+        showToast('Incorrect password!', 'error');
+        return false;
+      }
+    }
+
+    // ========== ACCESS CONTROL ==========
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Check admin access
+      const access = sessionStorage.getItem('portfolioAccess');
+      if (access !== 'admin') {
+        showToast('Access denied. Please login as admin.', 'error');
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+        return;
+      }
+      
+      // Check server health
+      const isHealthy = await checkServerHealth();
+      if (!isHealthy) {
+        showToast('Unable to connect to server. Please ensure backend is running.', 'error');
+      }
+      
+      navigateTo('about');
+    });
+
+    // ========== LOGOUT FUNCTION ==========
+    function logout() {
+      sessionStorage.removeItem('portfolioAccess');
+      window.location.href = '/';
+    }
+
+    // ========== NAVIGATION ==========
+    function navigateToHome() {
+      currentView = 'home';
+      currentPath = [];
+      
+      document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+      document.querySelectorAll('.nav-link')[1].classList.add('active');
+      
+      render();
+    }
+
+    function navigateTo(view, path = []) {
+      currentView = view;
+      currentPath = path;
+      
+      document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+      const navIndex = {
+        'about': 0,
+        'home': 1,
+        'projects': 2,
+        'practice': 3,
+        'resume': 4
+      }[view];
+      
+      if (navIndex !== undefined) {
+        document.querySelectorAll('.nav-link')[navIndex].classList.add('active');
+      }
+      
+      render();
+    }
+
+    function enterFolder(folderType) {
+      currentView = folderType;
+      currentPath = [];
+      
+      document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+      document.querySelectorAll('.nav-link')[folderType === 'projects' ? 2 : 3].classList.add('active');
+      
+      loadData();
+      render();
+    }
+
+    // ========== DATA LOADING ==========
+    async function loadData() {
+      try {
+        if (currentView === 'projects' || currentView === 'practice') {
+          await loadFolders();
+          await loadFiles();
+        } else if (currentView === 'home') {
+          await loadResume();
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showToast('Error loading data', 'error');
+      }
+    }
+
+    async function loadFolders() {
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch(`/api/folders?category=${currentView}&parentPath=${currentPath.join('/')}`);
+        if (response.ok) {
+          folders = await response.json();
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to load folders:', errorData);
+          folders = [];
+        }
+      } catch (error) {
+        console.error('Error loading folders:', error);
+        folders = [];
+      }
+    }
+
+    async function loadFiles() {
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch(`/api/files?category=${currentView}&folderPath=${currentPath.join('/')}`);
+        if (response.ok) {
+          files = await response.json();
+        } else {
+          const errorData = await response.json();
+          console.error('Failed to load files:', errorData);
+          files = [];
+        }
+      } catch (error) {
+        console.error('Error loading files:', error);
+        files = [];
+      }
+    }
+
+    async function loadResume() {
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch('/api/resume');
+        if (response.ok) {
+          const resumeData = await response.json();
+          files = resumeData && resumeData.id ? [resumeData] : [];
+        } else {
+          files = [];
+        }
+      } catch (error) {
+        console.error('Error loading resume:', error);
+        files = [];
+      }
+    }
+
+    // ========== RENDER FUNCTIONS ==========
+    function render() {
+      const content = document.getElementById('mainContent');
+      
+      if (currentView === 'about') {
+        renderAbout(content);
+      } else if (currentView === 'home') {
+        renderHome(content);
+      } else if (currentView === 'resume') {
+        renderResume(content);
+      } else {
+        renderInsideFolder(content);
+      }
+    }
+
+    function renderAbout(container) {
+      container.innerHTML = `
+        <div class="section">
+          <h2>About Me</h2>
+          <div class="about-content">
+            
+            <div class="about-section intro">
+              <h3>Hi, I'm Luyanda Sonopo</h3>
+              <p>Part software developer, part storyteller, part music-maker, full-time human who has consumed enough anime to be considered 70% animated at this point.</p>
+              
+              <p>I'm a Computer Science and Information Technology graduate from the University of KwaZulu-Natal, and I currently exist somewhere between logic, creativity, and whatever wild idea my brain decides to chase next.</p>
+            </div>
+
+            <div class="about-section truth">
+              <h3>Let's get something out of the way</h3>
+              <div class="highlight-box">
+                <p><strong>I did not build this website.</strong></p>
+                <p>Front-end is not my expertise — not yet, anyway. I don't know HTML, CSS, or JavaScript, and I'm not ashamed to say that.</p>
+                <p>My strengths live on the back-end, where I'm most fluent in 
+                  <span class="skills-pill">Java</span>. I'm fascinated by how things work, not how they look. The logic, the patterns, the behaviour — that's where I feel at home. But I'm always learning, always growing, and I'm definitely interested in front-end in the future. My learning journey never ends.</p>
+              </div>
+            </div>
+
+            <div class="about-section journey">
+              <h3>Where it all started</h3>
+              <p>My path to software development started way before I touched my first IDE.</p>
+              <p>As a kid, I tore apart every gadget I could find — remotes, toys, phones, anything with screws. Not because I loved hardware, but because I genuinely thought I'd open it and see the logic inside. I wanted to understand how things worked.</p>
+              
+              <div class="quote">
+                "I wanted to build the logic that makes things come alive."
+              </div>
+              
+              <p>Growing up, I discovered something called software — the invisible brain behind everything I couldn't find in the hardware. And just like that, it clicked. That's when I knew:</p>
+            </div>
+
+            <div class="about-section beyond">
+              <h3>Beyond the code</h3>
+              <p>Outside of development, I'm a crazy anime fan. I love stories — big worlds, intense emotions, quiet moments, absurd plots, all of it. Anime shapes a lot of my creativity.</p>
+              
+              <p>I'm also a writer. I write books, lyrics, and sometimes novels I almost finish but never quite bring to the end… and that's okay. Creativity isn't always linear. Sometimes it's just vibes.</p>
+              
+              <p>Music is another part of me — I enjoy listening to it, feeling it, and creating lyrics when the inspiration hits.</p>
+            </div>
+
+            <div class="about-section now">
+              <h3>And now we're here</h3>
+              <div class="highlight-box">
+                <p><strong>Everything you see inside this website — the writing, the content, the thoughts — is entirely my creation.</strong></p>
+                <p>No plagiarism. No shortcuts. No copy-paste magic. Just me.</p>
+              </div>
+              
+              <p style="text-align: center; font-size: 1.2em; margin-top: 30px;">
+                <em>Welcome to my world — the logic, the art, and the beautiful chaos in between.</em>
+              </p>
+            </div>
+
+            <div class="contact-links">
+              <a href="mailto:luyandasonopo@example.com" class="contact-btn primary">
+                📧 Get In Touch
+              </a>
+              <button class="contact-btn" onclick="navigateToHome()">
+                💼 Manage Portfolio
+              </button>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    async function renderHome(container) {
+      await loadResume();
+      const hasResume = files.length > 0 && files[0].id;
+      const resume = hasResume ? files[0] : null;
+      
+      container.innerHTML = `
+        <div class="section">
+          <div class="folder" onclick="enterFolder('projects')">
+            <h3>Project Folders</h3>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="folder" onclick="enterFolder('practice')">
+            <h3>Practice Code</h3>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Resume Management</h2>
+          <div class="resume-container">
+            ${hasResume ? `
+              <div class="resume-info">
+                <h3>Current Resume</h3>
+                <p><strong>File:</strong> ${resume.original_name || 'Unknown'}</p>
+                <p><strong>Size:</strong> ${resume.file_size ? formatFileSize(resume.file_size) : 'Unknown'}</p>
+                <p><strong>Uploaded:</strong> ${resume.upload_date ? formatDate(resume.upload_date) : 'Unknown date'}</p>
+              </div>
+              <div class="resume-actions">
+                <a href="/api/files/${resume.filename}" download class="action-btn">
+                  📥 Download Resume
+                </a>
+                <button class="action-btn" onclick="uploadResume()" style="background: var(--highlight);">
+                  🔄 Replace Resume
+                </button>
+                <button class="delete-btn" onclick="deleteResumeFromServer(${resume.id})" style="padding: 12px 25px; font-size: 1em;">
+                  🗑️ Delete Resume
+                </button>
+              </div>
+            ` : `
+              <div class="no-resume">
+                No resume uploaded yet
+                <div style="margin-top: 20px;">
+                  <button class="insert-btn" onclick="uploadResume()">Upload Resume</button>
+                </div>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    async function renderInsideFolder(container) {
+      await loadData();
+      const title = currentPath.length > 0 ? currentPath[currentPath.length - 1] : 
+                   (currentView === 'projects' ? 'Project Folders' : 'Practice Code');
+      const breadcrumbHTML = renderBreadcrumb();
+      
+      let foldersHTML = '';
+      folders.forEach((folder) => {
+        foldersHTML += `
+          <div class="folder-item" onclick="openFolder('${folder.name}')">
+            <span style="flex-grow:1;">${folder.name}</span>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteFolderFromServer(${folder.id})">Delete</button>
+          </div>
+        `;
+      });
+
+      let filesHTML = '';
+      files.forEach((file) => {
+        const icon = getFileIcon(file.file_type);
+        filesHTML += `
+          <div class="file-item">
+            <span>${icon}</span>
+            <span>${file.original_name || file.filename}</span>
+            <span style="font-size: 0.9em; opacity: 0.7; margin: 0 10px;">
+              ${file.file_size ? formatFileSize(file.file_size) : ''}
+            </span>
+            <div>
+              <a href="/api/files/${file.filename}" download class="action-btn" style="padding: 5px 10px; font-size: 0.8em; margin-right: 5px; text-decoration: none;">
+                Download
+              </a>
+              <button class="delete-btn" onclick="deleteFileFromServer(${file.id})">Delete</button>
+            </div>
+          </div>
+        `;
+      });
+
+      const emptyHTML = (!foldersHTML && !filesHTML) ? '<div class="empty-state">This folder is empty</div>' : '';
+
+      container.innerHTML = `
+        <div class="section">
+          <h2>${title}</h2>
+          ${breadcrumbHTML}
+          <div class="action-buttons">
+            <button class="insert-btn" onclick="createFolderOnServer()">New Folder</button>
+            <button class="insert-btn" onclick="uploadFiles()">Upload Files</button>
+          </div>
+          <div id="dropArea" class="dropzone" onclick="uploadFiles()">
+            Drag & Drop files here or click to upload
+          </div>
+          ${foldersHTML}
+          ${filesHTML}
+          ${emptyHTML}
+        </div>
+      `;
+
+      setupDropzone();
+    }
+
+    function getFileIcon(fileType) {
+      if (!fileType) return '📄';
+      if (fileType.startsWith('image/')) return '🖼️';
+      if (fileType.startsWith('video/')) return '🎥';
+      if (fileType.startsWith('audio/')) return '🎵';
+      if (fileType.includes('pdf')) return '📕';
+      if (fileType.includes('word') || fileType.includes('document')) return '📄';
+      if (fileType.includes('zip') || fileType.includes('archive')) return '📦';
+      if (fileType.includes('text')) return '📝';
+      if (fileType.includes('java')) return '☕';
+      return '📄';
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes) return '0 KB';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'Unknown';
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return 'Invalid date';
+      }
+    }
+
+    function renderBreadcrumb() {
+      let breadcrumb = '<div class="breadcrumb">';
+      const rootName = currentView === 'projects' ? 'Project Folders' : 'Practice Code';
+      breadcrumb += `<span onclick="enterFolder('${currentView}')">${rootName}</span>`;
+      
+      for (let i = 0; i < currentPath.length; i++) {
+        breadcrumb += ' <span class="breadcrumb-separator">/</span> ';
+        if (i === currentPath.length - 1) {
+          breadcrumb += `<span style="color: var(--text);">${currentPath[i]}</span>`;
+        } else {
+          breadcrumb += `<span onclick="navigateToPath('${currentView}', ${JSON.stringify(currentPath.slice(0, i + 1))})">${currentPath[i]}</span>`;
+        }
+      }
+      
+      breadcrumb += '</div>';
+      return breadcrumb;
+    }
+
+    function navigateToPath(view, path) {
+      currentView = view;
+      currentPath = path;
+      loadData();
+      render();
+    }
+
+    function openFolder(folderName) {
+      currentPath.push(folderName);
+      loadData();
+      render();
+    }
+
+    function setupDropzone() {
+      const dropzone = document.getElementById('dropArea');
+      if (!dropzone) return;
+      
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+        dropzone.classList.remove('dragover');
+      });
+
+      dropzone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        
+        if (!await verifyAdminAccess('upload files')) return;
+
+        const fileList = Array.from(e.dataTransfer.files);
+        if (fileList.length === 0) return;
+        
+        await handleFolderFileUpload(fileList);
+      });
+    }
+
+    function renderResume(container) {
+      container.innerHTML = `
+        <div class="section">
+          <h2>Resume Management</h2>
+          <div class="resume-container">
+            <div class="no-resume">
+              Resume management is now on the Dashboard
+              <div style="margin-top: 20px;">
+                <button class="insert-btn" onclick="navigateToHome()">
+                  Go to Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // === DATABASE FUNCTIONS ===
+
+    async function createFolderOnServer() {
+      if (!await verifyAdminAccess('create folder')) return;
+      
+      const folderName = prompt('Folder Name:');
+      if (!folderName) return;
+
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch('/api/folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: folderName,
+            category: currentView,
+            parentPath: currentPath.join('/')
+          })
+        });
+
+        if (response.ok) {
+          showToast('Folder created successfully!', 'success');
+          await loadFolders();
+          render();
+        } else {
+          const errorData = await response.json();
+          showToast('Error: ' + (errorData.error || 'Failed to create folder'), 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function uploadFiles() {
+      if (!await verifyAdminAccess('upload files')) return;
+
+      currentUploadTarget = 'folder';
+      document.getElementById('fileInput').click();
+    }
+
+    async function uploadResume() {
+      if (!await verifyAdminAccess('upload resume')) return;
+      
+      const hasExistingResume = files.length > 0 && files[0].id;
+      if (hasExistingResume && !confirm('Replace current resume?')) return;
+      
+      currentUploadTarget = 'resume';
+      document.getElementById('fileInput').click();
+    }
+
+    async function handleFolderFileUpload(fileList) {
+      let uploadCount = 0;
+      let errorCount = 0;
+      const errors = [];
+      
+      for (let file of fileList) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', currentView);
+        formData.append('folderPath', currentPath.join('/'));
+
+        try {
+          // FIXED: Changed from /upload to /api/upload
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (response.ok) {
+            uploadCount++;
+          } else {
+            errorCount++;
+            const errorData = await response.json();
+            errors.push(`${file.name}: ${errorData.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          errorCount++;
+          errors.push(`${file.name}: ${error.message}`);
+        }
+      }
+
+      if (errorCount === 0) {
+        showToast(`✅ ${uploadCount} file(s) uploaded successfully!`, 'success');
+      } else {
+        showToast(`⚠️ Uploaded ${uploadCount} file(s), ${errorCount} failed`, 'error');
+        if (errors.length > 0) {
+          console.error('Upload errors:', errors);
+        }
+      }
+      
+      await loadFiles();
+      render();
+    }
+
+    document.getElementById('fileInput').onchange = async function(e) {
+      const fileList = Array.from(e.target.files);
+      
+      // Always clear the input
+      this.value = '';
+      
+      if (fileList.length === 0) return;
+      
+      if (currentUploadTarget === 'resume') {
+        if (fileList.length > 0) {
+          const file = fileList[0];
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('category', 'resume');
+
+          try {
+            // FIXED: Changed from /upload to /api/upload
+            const response = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData
+            });
+
+            if (response.ok) {
+              showToast('Resume uploaded successfully!', 'success');
+              await loadResume();
+              render();
+            } else {
+              const errorData = await response.json();
+              showToast('Upload failed: ' + (errorData.error || 'Unknown error'), 'error');
+            }
+          } catch (error) {
+            showToast('Upload error: ' + error.message, 'error');
+          }
+        }
+      } else if (currentUploadTarget === 'folder') {
+        await handleFolderFileUpload(fileList);
+      }
+    };
+
+    async function deleteFolderFromServer(folderId) {
+      if (!await verifyAdminAccess('delete folder')) return;
+      
+      if (!confirm('Delete this folder and all its contents?')) return;
+
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch(`/api/folders/${folderId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showToast('Folder deleted successfully!', 'success');
+          await loadFolders();
+          await loadFiles();
+          render();
+        } else {
+          const errorData = await response.json();
+          showToast('Error: ' + (errorData.error || 'Failed to delete folder'), 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteFileFromServer(fileId) {
+      if (!await verifyAdminAccess('delete file')) return;
+
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch(`/api/files/${fileId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showToast('File deleted successfully!', 'success');
+          await loadFiles();
+          render();
+        } else {
+          const errorData = await response.json();
+          showToast('Error: ' + (errorData.error || 'Failed to delete file'), 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteResumeFromServer(fileId) {
+      if (!await verifyAdminAccess('delete resume')) return;
+
+      if (!confirm('Delete resume?')) return;
+
+      try {
+        // FIXED: Added /api/ prefix
+        const response = await fetch(`/api/files/${fileId}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          showToast('Resume deleted successfully!', 'success');
+          await loadResume();
+          render();
+        } else {
+          const errorData = await response.json();
+          showToast('Error: ' + (errorData.error || 'Failed to delete resume'), 'error');
+        }
+      } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

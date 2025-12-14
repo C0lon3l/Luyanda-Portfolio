@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luyanda Portfolio - Access</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+        :root {
+            --bg-start: #0f172a;
+            --bg-middle: #1e293b;
+            --bg-end: #334155;
+            --text: #f1f5f9;
+            --highlight: #ff6b6b;
+            --accent: #4ecdc4;
+            --card: rgba(30, 41, 59, 0.95);
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(145deg, var(--bg-start), var(--bg-middle), var(--bg-end));
+            background-size: 400% 400%;
+            animation: gradientBG 20s ease infinite;
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .login-container {
+            background: var(--card);
+            padding: 50px;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px var(--shadow);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border-top: 5px solid var(--accent);
+            transform: translateY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .login-container.loading {
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--highlight), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo p {
+            font-size: 1.1em;
+            opacity: 0.8;
+        }
+
+        .access-options {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.6s;
+        }
+
+        .option-card:hover::after {
+            left: 100%;
+        }
+
+        .option-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            transform: translateY(-5px);
+        }
+
+        .option-card.loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .option-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: var(--accent);
+        }
+
+        .option-card p {
+            opacity: 0.8;
+            font-size: 0.95em;
+        }
+
+        .guest-icon::before {
+            content: '👤';
+            font-size: 2.5em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .admin-icon::before {
+            content: '🔐';
+            font-size: 2.5em;
+            display: block;
+            margin-bottom: 15px;
+        }
+
+        .password-form {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .password-form.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2);
+        }
+
+        .input-group input.loading {
+            background-image: linear-gradient(90deg, 
+                rgba(0,0,0,0.3) 0%, 
+                rgba(78, 205, 196, 0.1) 50%, 
+                rgba(0,0,0,0.3) 100%);
+            background-size: 200% 100%;
+            animation: loadingShimmer 1.5s infinite;
+        }
+
+        @keyframes loadingShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.6s;
+        }
+
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3db8ac;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--highlight);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        .btn.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn.loading::before {
+            content: '';
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: var(--highlight);
+            margin-top: 10px;
+            display: none;
+            font-size: 0.9em;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #e53e3e;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+
+        .toast.success {
+            background: #38a169;
+        }
+
+        .toast.info {
+            background: #3182ce;
+        }
+
+        .toast.warning {
+            background: #d69e2e;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
+            backdrop-filter: blur(5px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--accent);
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .logo h1 {
+                font-size: 2.2em;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .option-card {
+                padding: 20px 15px;
+            }
+        }
+
+        /* Performance optimizations */
+        .performance-optimized {
+            will-change: transform, opacity;
+            backface-visibility: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container performance-optimized">
+        <div class="logo">
+            <h1>Luyanda Sonopo</h1>
+            <p>Developer • Writer • Creative</p>
+        </div>
+        
+        <div class="access-options">
+            <div class="option-card guest-icon performance-optimized" id="guestOption">
+                <h3>Guest Access</h3>
+                <p>View portfolio, projects, and download files. No upload or delete permissions.</p>
+            </div>
+            
+            <div class="option-card admin-icon performance-optimized" id="adminOption">
+                <h3>Admin Access</h3>
+                <p>Full access to upload, delete, and manage all content. Password required.</p>
+            </div>
+        </div>
+        
+        <div class="password-form" id="passwordForm">
+            <div class="input-group">
+                <label for="adminPassword">Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter admin password" class="performance-optimized">
+            </div>
+            
+            <div class="error-message" id="errorMessage">
+                Incorrect password. Please try again.
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary performance-optimized" id="submitPassword">
+                    <span>🔓</span> Enter Admin Portal
+                </button>
+                <button class="btn btn-cancel performance-optimized" id="cancelPassword">
+                    <span>↩️</span> Go Back
+                </button>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2025 Luyanda Sonopo. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // ========== PERFORMANCE OPTIMIZED LOGIN PAGE ==========
+        'use strict';
+
+        let currentSelection = null;
+        let isProcessing = false;
+
+        // DOM Elements cached for performance
+        const elements = {
+            guestOption: document.getElementById('guestOption'),
+            adminOption: document.getElementById('adminOption'),
+            passwordForm: document.getElementById('passwordForm'),
+            adminPasswordInput: document.getElementById('adminPassword'),
+            errorMessage: document.getElementById('errorMessage'),
+            submitPasswordBtn: document.getElementById('submitPassword'),
+            cancelPasswordBtn: document.getElementById('cancelPassword'),
+            loadingOverlay: document.getElementById('loadingOverlay'),
+            loginContainer: document.querySelector('.login-container')
+        };
+
+        // ========== PERFORMANCE UTILITIES ==========
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // ========== UI UTILITIES ==========
+        function showToast(message, type = 'info', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, duration);
+        }
+
+        function showLoading(show = true) {
+            if (show) {
+                elements.loadingOverlay.classList.add('active');
+                elements.loginContainer.classList.add('loading');
+            } else {
+                elements.loadingOverlay.classList.remove('active');
+                elements.loginContainer.classList.remove('loading');
+            }
+        }
+
+        function setButtonLoading(button, loading = true) {
+            if (loading) {
+                button.classList.add('loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('loading');
+                button.disabled = false;
+            }
+        }
+
+        // ========== OPTIMIZED SERVER HEALTH CHECK ==========
+        async function checkServerHealth() {
+            const cachedHealth = sessionStorage.getItem('serverHealth');
+            const cacheTime = sessionStorage.getItem('serverHealthTime');
+            const now = Date.now();
+            
+            if (cachedHealth && cacheTime && (now - parseInt(cacheTime)) < 30000) {
+                return cachedHealth === 'healthy';
+            }
+            
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                // FIXED: Added /api/ prefix
+                const response = await fetch('/api/health', {
+                    signal: controller.signal,
+                    cache: 'no-store'
+                });
+                
+                clearTimeout(timeoutId);
+                
+                const isHealthy = response.ok;
+                
+                sessionStorage.setItem('serverHealth', isHealthy ? 'healthy' : 'unhealthy');
+                sessionStorage.setItem('serverHealthTime', now.toString());
+                
+                return isHealthy;
+            } catch (error) {
+                console.error('Server health check failed:', error);
+                sessionStorage.setItem('serverHealth', 'unhealthy');
+                sessionStorage.setItem('serverHealthTime', now.toString());
+                return false;
+            }
+        }
+
+        // ========== OPTIMIZED NAVIGATION ==========
+        const navigateToGuest = debounce(async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            setButtonLoading(elements.guestOption, true);
+            showLoading(true);
+            
+            try {
+                const isHealthy = await checkServerHealth();
+                
+                if (!isHealthy) {
+                    showToast('Unable to connect to server. Please ensure backend is running.', 'warning');
+                    return;
+                }
+                
+                // Store guest access in session storage
+                sessionStorage.setItem('portfolioAccess', 'guest');
+                sessionStorage.setItem('accessTime', Date.now().toString());
+                
+                // Pre-cache for next page
+                sessionStorage.setItem('preloadedResume', 'true');
+                
+                // Redirect to public portfolio
+                window.location.href = '/public';
+            } catch (error) {
+                console.error('Navigation error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            } finally {
+                setButtonLoading(elements.guestOption, false);
+                showLoading(false);
+                isProcessing = false;
+            }
+        }, 300);
+
+        const navigateToAdmin = debounce(async () => {
+            if (isProcessing) return;
+            
+            const isHealthy = await checkServerHealth();
+            if (!isHealthy) {
+                showToast('Unable to connect to server. Please ensure backend is running.', 'warning');
+                return;
+            }
+            
+            currentSelection = 'admin';
+            elements.adminOption.style.borderColor = 'var(--accent)';
+            elements.guestOption.style.opacity = '0.5';
+            elements.guestOption.style.pointerEvents = 'none';
+            elements.passwordForm.classList.add('active');
+            elements.adminPasswordInput.focus();
+        }, 200);
+
+        // ========== SERVER-SIDE PASSWORD VERIFICATION ==========
+        const handlePasswordSubmit = debounce(async () => {
+            if (isProcessing) return;
+            isProcessing = true;
+            
+            const enteredPassword = elements.adminPasswordInput.value.trim();
+            
+            if (!enteredPassword) {
+                showToast('Please enter a password', 'warning');
+                isProcessing = false;
+                return;
+            }
+            
+            setButtonLoading(elements.submitPasswordBtn, true);
+            elements.adminPasswordInput.classList.add('loading');
+            
+            try {
+                // Call server-side login endpoint
+                // FIXED: Already has /api/ prefix - KEPT AS IS
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        password: enteredPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Store the JWT token
+                    sessionStorage.setItem('adminToken', data.token);
+                    sessionStorage.setItem('portfolioAccess', 'admin');
+                    sessionStorage.setItem('accessTime', Date.now().toString());
+                    
+                    // Clear any guest cache
+                    sessionStorage.removeItem('preloadedResume');
+                    
+                    showToast('Access granted! Redirecting...', 'success', 1500);
+                    
+                    // Brief delay for UX
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 800);
+                } else {
+                    // Show error with animation
+                    elements.errorMessage.textContent = data.error || 'Invalid credentials';
+                    elements.errorMessage.classList.add('show');
+                    elements.adminPasswordInput.style.borderColor = 'var(--highlight)';
+                    elements.adminPasswordInput.value = '';
+                    
+                    // Vibrate on error if supported
+                    if (navigator.vibrate) {
+                        navigator.vibrate([100, 50, 100]);
+                    }
+                    
+                    // Hide error after 3 seconds
+                    setTimeout(() => {
+                        elements.errorMessage.classList.remove('show');
+                        elements.adminPasswordInput.style.borderColor = '';
+                    }, 3000);
+                    
+                    showToast('Authentication failed', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Server error. Please try again.', 'error');
+            } finally {
+                setButtonLoading(elements.submitPasswordBtn, false);
+                elements.adminPasswordInput.classList.remove('loading');
+                isProcessing = false;
+            }
+        }, 300);
+
+        // ========== EVENT LISTENERS ==========
+        function initializeEventListeners() {
+            // Optimized click handlers
+            elements.guestOption.addEventListener('click', navigateToGuest, { passive: true });
+            elements.adminOption.addEventListener('click', navigateToAdmin, { passive: true });
+            elements.cancelPasswordBtn.addEventListener('click', resetForm, { passive: true });
+            elements.submitPasswordBtn.addEventListener('click', handlePasswordSubmit, { passive: true });
+            
+            // Enter key for password submission
+            elements.adminPasswordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isProcessing) {
+                    handlePasswordSubmit();
+                }
+            });
+            
+            // Focus effects with throttling
+            const handleMouseEnter = throttle((option) => {
+                if (!currentSelection) {
+                    option.style.transform = 'translateY(-3px)';
+                }
+            }, 100);
+            
+            const handleMouseLeave = throttle((option) => {
+                if (!currentSelection || option !== elements.adminOption) {
+                    option.style.transform = 'translateY(0)';
+                }
+            }, 100);
+            
+            [elements.guestOption, elements.adminOption].forEach(option => {
+                option.addEventListener('mouseenter', () => handleMouseEnter(option), { passive: true });
+                option.addEventListener('mouseleave', () => handleMouseLeave(option), { passive: true });
+            });
+            
+            // Touch feedback for mobile
+            if ('ontouchstart' in window) {
+                elements.guestOption.style.cursor = 'pointer';
+                elements.adminOption.style.cursor = 'pointer';
+            }
+        }
+
+        // ========== FORM MANAGEMENT ==========
+        function resetForm() {
+            elements.passwordForm.classList.remove('active');
+            elements.adminPasswordInput.value = '';
+            elements.errorMessage.classList.remove('show');
+            elements.adminOption.style.borderColor = '';
+            elements.guestOption.style.opacity = '1';
+            elements.guestOption.style.pointerEvents = 'auto';
+            currentSelection = null;
+            isProcessing = false;
+        }
+
+        // ========== INITIALIZATION ==========
+        function initialize() {
+            // Clear previous session on fresh load
+            const accessTime = sessionStorage.getItem('accessTime');
+            const now = Date.now();
+            
+            // Clear session if more than 8 hours old
+            if (accessTime && (now - parseInt(accessTime)) > 8 * 60 * 60 * 1000) {
+                sessionStorage.clear();
+            } else {
+                // Only remove access flag, keep other data
+                sessionStorage.removeItem('portfolioAccess');
+                sessionStorage.removeItem('adminToken');
+            }
+            
+            // Preload server health in background
+            setTimeout(() => {
+                checkServerHealth().then(isHealthy => {
+                    if (isHealthy) {
+                        console.log('✅ Server pre-check complete');
+                    }
+                });
+            }, 1000);
+            
+            // Initialize event listeners
+            initializeEventListeners();
+            
+            console.log('🚀 Login page initialized with server-side authentication');
+        }
+
+        // Start initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+    </script>
+</body>
+</html>

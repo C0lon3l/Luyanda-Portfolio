@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "Server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/Server.js"
+    },
+    {
+      "src": "/admin",
+      "dest": "/MyWeb.html"
+    },
+    {
+      "src": "/public",
+      "dest": "/public-portfolio.html"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|ico|svg))",
+      "dest": "/$1"
+    }
+  ]
+}
