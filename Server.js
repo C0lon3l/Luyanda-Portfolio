@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 // ========== LOAD ENVIRONMENT VARIABLES ==========
 require('dotenv').config();
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -160,6 +161,28 @@ app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// ========== STATIC FILE SERVING ==========
+// Serve static files (HTML, CSS, JS) from root
+app.use(express.static(__dirname));
+
+// Specific routes for HTML files
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'MyWeb.html'));
+});
+
+app.get('/public', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public-portfolio.html'));
+});
+
+// Catch-all for other static files
+app.get('/*.(html|css|js|png|jpg|jpeg|gif|ico|svg)', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
+
 // ========== PERFORMANCE MONITORING ==========
 app.use((req, res, next) => {
     const start = Date.now();
@@ -169,6 +192,16 @@ app.use((req, res, next) => {
         console.log(`${logLevel} ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
     });
     next();
+});
+
+// ========== TEST ENDPOINT ==========
+app.get('/api/test', (req, res) => {
+    res.json({ 
+        status: 'Server is running', 
+        timestamp: new Date().toISOString(),
+        environment: isVercel ? 'Vercel' : 'Local',
+        version: '1.0.0'
+    });
 });
 
 // ========== AUTHENTICATION ENDPOINTS ==========
@@ -458,7 +491,7 @@ app.post('/api/secure/upload', verifyAdminToken, upload.single('file'), async (r
 
         clearCacheForCategory(category, folderPath);
         if (category === 'resume') {
-            responseCache.delete('/resume');
+            responseCache.delete('/api/resume');
         }
 
         res.json({
@@ -518,7 +551,7 @@ app.delete('/api/secure/files/:id', verifyAdminToken, async (req, res) => {
 
         clearCacheForCategory(fileInfo.category, fileInfo.folder_path);
         if (fileInfo.category === 'resume') {
-            responseCache.delete('/resume');
+            responseCache.delete('/api/resume');
         }
 
         res.json({ 
@@ -534,12 +567,10 @@ app.delete('/api/secure/files/:id', verifyAdminToken, async (req, res) => {
     }
 });
 
-// ========== EXISTING PUBLIC ENDPOINTS (KEPT FOR COMPATIBILITY) ==========
+// ========== API ENDPOINTS (with /api/ prefix) ==========
 
-// 1. Upload file (public but could be protected)
-app.post('/upload', upload.single('file'), async (req, res) => {
-    // Same as before, but you might want to protect this
-    // Currently leaving it public for backward compatibility
+// 1. Upload file (public but could be protected) - API VERSION
+app.post('/api/upload', upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
@@ -590,7 +621,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         clearCacheForCategory(category, folderPath);
         if (category === 'resume') {
-            responseCache.delete('/resume');
+            responseCache.delete('/api/resume');
         }
 
         res.json({
@@ -613,8 +644,8 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
-// 2. Get files (with caching) - Public
-app.get('/files', cacheMiddleware(), async (req, res) => {
+// 2. Get files (with caching) - Public - API VERSION
+app.get('/api/files', cacheMiddleware(), async (req, res) => {
     const { category, folderPath = '' } = req.query;
 
     try {
@@ -656,8 +687,8 @@ app.get('/files', cacheMiddleware(), async (req, res) => {
     }
 });
 
-// 3. Get resume (optimized with caching) - Public
-app.get('/resume', cacheMiddleware(2 * 60 * 1000), async (req, res) => {
+// 3. Get resume (optimized with caching) - Public - API VERSION
+app.get('/api/resume', cacheMiddleware(2 * 60 * 1000), async (req, res) => {
     try {
         const { data: resumes, error } = await supabase
             .from('files')
@@ -682,8 +713,8 @@ app.get('/resume', cacheMiddleware(2 * 60 * 1000), async (req, res) => {
     }
 });
 
-// 4. Download file (optimized) - Public
-app.get('/files/:filename', async (req, res) => {
+// 4. Download file (optimized) - Public - API VERSION
+app.get('/api/files/:filename', async (req, res) => {
     const filename = req.params.filename;
     
     try {
@@ -715,7 +746,6 @@ app.get('/files/:filename', async (req, res) => {
         res.setHeader('Cache-Control', 'public, max-age=3600');
         res.setHeader('X-Accel-Redirect', urlData.publicUrl);
         
-        // FIXED: Use SUPABASE_URL variable instead of hardcoded URL
         const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${filename}`.replace(/\/\//g, '/');
         
         res.redirect(301, directUrl);
@@ -725,7 +755,6 @@ app.get('/files/:filename', async (req, res) => {
         
         if (error.message === 'Database query timeout') {
             console.log('⚠️ Database timeout, trying direct URL');
-            // FIXED: Use SUPABASE_URL variable instead of hardcoded URL
             const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/resume/${filename}`;
             res.redirect(301, directUrl);
         } else {
@@ -734,8 +763,8 @@ app.get('/files/:filename', async (req, res) => {
     }
 });
 
-// 5. Delete file - Consider protecting this
-app.delete('/files/:id', async (req, res) => {
+// 5. Delete file - Consider protecting this - API VERSION
+app.delete('/api/files/:id', async (req, res) => {
     const fileId = req.params.id;
 
     try {
@@ -771,7 +800,7 @@ app.delete('/files/:id', async (req, res) => {
 
         clearCacheForCategory(fileInfo.category, fileInfo.folder_path);
         if (fileInfo.category === 'resume') {
-            responseCache.delete('/resume');
+            responseCache.delete('/api/resume');
         }
 
         res.json({ 
@@ -786,8 +815,8 @@ app.delete('/files/:id', async (req, res) => {
     }
 });
 
-// 6. Create folder - Consider protecting this
-app.post('/folders', async (req, res) => {
+// 6. Create folder - Consider protecting this - API VERSION
+app.post('/api/folders', async (req, res) => {
     const { name, category, parentPath = '' } = req.body;
 
     if (!name || !category) {
@@ -822,8 +851,8 @@ app.post('/folders', async (req, res) => {
     }
 });
 
-// 7. Get folders (with caching) - Public
-app.get('/folders', cacheMiddleware(), async (req, res) => {
+// 7. Get folders (with caching) - Public - API VERSION
+app.get('/api/folders', cacheMiddleware(), async (req, res) => {
     const { category, parentPath = '' } = req.query;
 
     try {
@@ -846,8 +875,8 @@ app.get('/folders', cacheMiddleware(), async (req, res) => {
     }
 });
 
-// 8. Delete folder - Consider protecting this
-app.delete('/folders/:id', async (req, res) => {
+// 8. Delete folder - Consider protecting this - API VERSION
+app.delete('/api/folders/:id', async (req, res) => {
     const folderId = req.params.id;
 
     try {
@@ -903,7 +932,7 @@ app.delete('/folders/:id', async (req, res) => {
 });
 
 // 9. Health check endpoint (optimized)
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         timestamp: new Date().toISOString(),
@@ -916,7 +945,7 @@ app.get('/health', (req, res) => {
 });
 
 // 10. Cache management endpoint - Protected
-app.get('/cache/clear', verifyAdminToken, (req, res) => {
+app.get('/api/cache/clear', verifyAdminToken, (req, res) => {
     const { category } = req.query;
     
     if (category) {
@@ -926,6 +955,373 @@ app.get('/cache/clear', verifyAdminToken, (req, res) => {
         responseCache.clear();
         res.json({ success: true, message: 'All cache cleared' });
     }
+});
+
+// ========== LEGACY ENDPOINTS (without /api/ prefix - for backward compatibility) ==========
+
+// 1. Upload file (legacy)
+app.post('/upload', upload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { category = 'projects', folderPath = '' } = req.body;
+    const fileName = Date.now() + '-' + req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+    
+    try {
+        const filePath = `${category}/${folderPath ? folderPath + '/' : ''}${fileName}`.replace(/\/\//g, '/');
+        
+        const { data: storageData, error: storageError } = await supabase.storage
+            .from('portfolio-files')
+            .upload(filePath, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: true
+            });
+
+        if (storageError) {
+            console.error('Supabase Storage error:', storageError);
+            return res.status(500).json({ 
+                error: 'Storage upload failed: ' + storageError.message 
+            });
+        }
+
+        console.log('✅ File uploaded to Supabase Storage:', filePath);
+
+        const { data: dbData, error: dbError } = await supabase
+            .from('files')
+            .insert({
+                filename: fileName,
+                original_name: req.file.originalname,
+                file_type: req.file.mimetype,
+                file_size: req.file.size,
+                folder_path: folderPath,
+                category: category,
+                upload_date: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (dbError) {
+            console.error('Supabase Database error:', dbError);
+            await supabase.storage.from('portfolio-files').remove([filePath]);
+            return res.status(500).json({ 
+                error: 'Database error: ' + dbError.message 
+            });
+        }
+
+        clearCacheForCategory(category, folderPath);
+        if (category === 'resume') {
+            responseCache.delete('/api/resume');
+        }
+
+        res.json({
+            success: true,
+            id: dbData.id,
+            filename: fileName,
+            original_name: req.file.originalname,
+            file_type: req.file.mimetype,
+            file_size: req.file.size,
+            folder_path: folderPath,
+            category: category,
+            upload_date: dbData.upload_date || new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('Upload error:', error);
+        res.status(500).json({ 
+            error: 'Server error: ' + error.message
+        });
+    }
+});
+
+// 2. Get files (legacy)
+app.get('/files', cacheMiddleware(), async (req, res) => {
+    const { category, folderPath = '' } = req.query;
+
+    try {
+        const query = supabase
+            .from('files')
+            .select('*', { count: 'exact' })
+            .order('upload_date', { ascending: false })
+            .limit(100);
+
+        if (category) {
+            query.eq('category', category);
+        }
+
+        if (folderPath !== undefined && folderPath !== '') {
+            query.eq('folder_path', folderPath);
+        }
+
+        const { data: files, error, count } = await query;
+
+        if (error) {
+            console.error('Supabase query error:', error);
+            return res.status(500).json({ error: 'Database error: ' + error.message });
+        }
+
+        res.json(files || []);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 3. Get resume (legacy)
+app.get('/resume', cacheMiddleware(2 * 60 * 1000), async (req, res) => {
+    try {
+        const { data: resumes, error } = await supabase
+            .from('files')
+            .select('*')
+            .eq('category', 'resume')
+            .order('upload_date', { ascending: false })
+            .limit(1);
+
+        if (error) {
+            console.error('Supabase error:', error);
+            return res.status(500).json({ error: 'Database error: ' + error.message });
+        }
+
+        if (resumes && resumes.length > 0) {
+            res.json(resumes[0]);
+        } else {
+            res.json({});
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 4. Download file (legacy)
+app.get('/files/:filename', async (req, res) => {
+    const filename = req.params.filename;
+    
+    try {
+        const fileInfoPromise = supabase
+            .from('files')
+            .select('category, folder_path, original_name')
+            .eq('filename', filename)
+            .single();
+
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database query timeout')), 5000)
+        );
+
+        const { data: fileInfo, error: dbError } = await Promise.race([
+            fileInfoPromise,
+            timeoutPromise
+        ]);
+
+        if (dbError || !fileInfo) {
+            return res.status(404).json({ error: 'File not found in database' });
+        }
+
+        const filePath = `${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${filename}`.replace(/\/\//g, '/');
+        
+        const { data: urlData } = supabase.storage
+            .from('portfolio-files')
+            .getPublicUrl(filePath);
+
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('X-Accel-Redirect', urlData.publicUrl);
+        
+        const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${filename}`.replace(/\/\//g, '/');
+        
+        res.redirect(301, directUrl);
+
+    } catch (error) {
+        console.error('Download error:', error);
+        
+        if (error.message === 'Database query timeout') {
+            console.log('⚠️ Database timeout, trying direct URL');
+            const directUrl = `${SUPABASE_URL}/storage/v1/object/public/portfolio-files/resume/${filename}`;
+            res.redirect(301, directUrl);
+        } else {
+            res.status(500).json({ error: 'File download failed: ' + error.message });
+        }
+    }
+});
+
+// 5. Delete file (legacy)
+app.delete('/files/:id', async (req, res) => {
+    const fileId = req.params.id;
+
+    try {
+        const { data: fileInfo, error: fetchError } = await supabase
+            .from('files')
+            .select('filename, category, folder_path')
+            .eq('id', fileId)
+            .single();
+
+        if (fetchError || !fileInfo) {
+            return res.status(404).json({ error: 'File not found in database' });
+        }
+
+        const filePath = `${fileInfo.category}/${fileInfo.folder_path ? fileInfo.folder_path + '/' : ''}${fileInfo.filename}`.replace(/\/\//g, '/');
+        
+        const { error: storageError } = await supabase.storage
+            .from('portfolio-files')
+            .remove([filePath]);
+
+        if (storageError) {
+            console.error('Supabase Storage delete error:', storageError);
+        }
+
+        const { error: dbError } = await supabase
+            .from('files')
+            .delete()
+            .eq('id', fileId);
+
+        if (dbError) {
+            console.error('Supabase Database delete error:', dbError);
+            return res.status(500).json({ error: 'Database error: ' + dbError.message });
+        }
+
+        clearCacheForCategory(fileInfo.category, fileInfo.folder_path);
+        if (fileInfo.category === 'resume') {
+            responseCache.delete('/api/resume');
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'File deleted successfully',
+            deletedFile: fileInfo.filename
+        });
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 6. Create folder (legacy)
+app.post('/folders', async (req, res) => {
+    const { name, category, parentPath = '' } = req.body;
+
+    if (!name || !category) {
+        return res.status(400).json({ error: 'Missing required fields: name and category' });
+    }
+
+    try {
+        const { data: folder, error } = await supabase
+            .from('folders')
+            .insert({
+                name: name.trim(),
+                parent_path: parentPath,
+                category: category
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Supabase error:', error);
+            return res.status(500).json({ error: 'Database error: ' + error.message });
+        }
+
+        clearCacheForCategory(category, parentPath);
+
+        res.json({
+            success: true,
+            folder: folder
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 7. Get folders (legacy)
+app.get('/folders', cacheMiddleware(), async (req, res) => {
+    const { category, parentPath = '' } = req.query;
+
+    try {
+        const { data: folders, error } = await supabase
+            .from('folders')
+            .select('*')
+            .eq('category', category)
+            .eq('parent_path', parentPath)
+            .order('name');
+
+        if (error) {
+            console.error('Supabase error:', error);
+            return res.status(500).json({ error: 'Database error: ' + error.message });
+        }
+
+        res.json(folders || []);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 8. Delete folder (legacy)
+app.delete('/folders/:id', async (req, res) => {
+    const folderId = req.params.id;
+
+    try {
+        const { data: folder, error: fetchError } = await supabase
+            .from('folders')
+            .select('*')
+            .eq('id', folderId)
+            .single();
+
+        if (fetchError || !folder) {
+            return res.status(404).json({ error: 'Folder not found' });
+        }
+
+        const fullFolderPath = folder.parent_path ? 
+            `${folder.parent_path}/${folder.name}` : folder.name;
+
+        const { data: files, error: filesError } = await supabase
+            .from('files')
+            .select('filename')
+            .eq('category', folder.category)
+            .eq('folder_path', fullFolderPath);
+
+        if (!filesError && files && files.length > 0) {
+            const filePaths = files.map(file => 
+                `${folder.category}/${fullFolderPath ? fullFolderPath + '/' : ''}${file.filename}`.replace(/\/\//g, '/')
+            );
+            
+            await Promise.allSettled([
+                supabase.storage.from('portfolio-files').remove(filePaths),
+                supabase.from('files')
+                    .delete()
+                    .eq('category', folder.category)
+                    .eq('folder_path', fullFolderPath)
+            ]);
+        }
+
+        await Promise.allSettled([
+            supabase.from('folders').delete().eq('parent_path', fullFolderPath),
+            supabase.from('folders').delete().eq('id', folderId)
+        ]);
+
+        clearCacheForCategory(folder.category);
+
+        res.json({ 
+            success: true,
+            message: 'Folder and all contents deleted successfully'
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: 'Server error: ' + error.message });
+    }
+});
+
+// 9. Health check (legacy)
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        environment: isVercel ? 'Vercel' : 'Local',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        cacheSize: responseCache.size,
+        authEnabled: true
+    });
 });
 
 // ========== ERROR HANDLING ==========
@@ -965,12 +1361,17 @@ if (require.main === module) {
         console.log(`🗄️  Database: Supabase PostgreSQL`);
         console.log(`⚡ Performance: Caching enabled (${CACHE_TTL/1000}s TTL)`);
         console.log('='.repeat(50));
-        console.log('📋 Available endpoints:');
+        console.log('📋 Available API endpoints:');
+        console.log('  GET  /api/test           - Server test');
+        console.log('  GET  /api/health         - Health check');
         console.log('  POST /api/admin/login    - Admin login');
         console.log('  POST /api/admin/init     - Initialize admin (run once)');
         console.log('  GET  /api/admin/verify   - Verify token');
         console.log('  GET  /api/admin/data     - Admin data (protected)');
-        console.log('  POST /api/secure/upload  - Protected upload');
+        console.log('  POST /api/upload         - Upload file');
+        console.log('  GET  /api/files          - Get files');
+        console.log('  GET  /api/resume         - Get resume');
+        console.log('  GET  /api/folders        - Get folders');
         console.log('='.repeat(50));
     });
 
