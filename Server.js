@@ -150,6 +150,14 @@ function checkRateLimit(ip) {
 }
 
 // ========== MIDDLEWARE ==========
+
+// Handle favicon request
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end(); // Return "No Content" status
+    // OR you can serve a real favicon file if you have one
+    // res.sendFile(path.join(__dirname, 'favicon.ico'));
+});
+
 app.use(cors({
     origin: true,
     credentials: true,
@@ -1387,3 +1395,4 @@ if (require.main === module) {
 
 // Export for Vercel
 module.exports = app;
+
