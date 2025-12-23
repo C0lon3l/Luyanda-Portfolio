@@ -1,0 +1,26 @@
+name: 🗄️ Supabase Keepalive Ping
+on:
+  schedule:
+    # Runs at 00:00 UTC every 6th day (e.g., Jan 1, Jan 7, Jan 13...)
+    - cron: '0 0 */6 * *'
+  workflow_dispatch: # Lets you run it manually from GitHub's UI
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📡 Ping Supabase Keepalive Function
+        run: |
+          ENDPOINT="https://xomkewqnasftvovpuobu.supabase.co/rest/v1/rpc/keepalive"
+          echo "Pinging: $ENDPOINT"
+          
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ENDPOINT")
+          
+          echo "Response Code: $HTTP_CODE"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Success: Supabase project is active."
+          else
+            echo "❌ Ping failed! Check your project ID and function."
+            exit 1
+          fi
