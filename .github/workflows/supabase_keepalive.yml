@@ -1,26 +1,34 @@
 name: 🗄️ Supabase Keepalive Ping
 on:
   schedule:
-    # Runs at 00:00 UTC every 6th day (e.g., Jan 1, Jan 7, Jan 13...)
     - cron: '0 0 */6 * *'
-  workflow_dispatch: # Lets you run it manually from GitHub's UI
+  workflow_dispatch:
 
 jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
       - name: 📡 Ping Supabase Keepalive Function
+        env: # Make the secret available as an environment variable
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           ENDPOINT="https://xomkewqnasftvovpuobu.supabase.co/rest/v1/rpc/keepalive"
+          
           echo "Pinging: $ENDPOINT"
           
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$ENDPOINT")
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$ENDPOINT")
           
           echo "Response Code: $HTTP_CODE"
           
           if [ "$HTTP_CODE" -eq 200 ]; then
             echo "✅ Success: Supabase project is active."
+          elif [ "$HTTP_CODE" -eq 401 ]; then
+            echo "❌ 401 Unauthorized. The SUPABASE_ANON_KEY secret may be incorrect."
+            exit 1
           else
-            echo "❌ Ping failed! Check your project ID and function."
+            echo "❌ Ping failed with HTTP code: $HTTP_CODE"
             exit 1
           fi
