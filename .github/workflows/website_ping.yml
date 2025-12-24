@@ -1,0 +1,28 @@
+name: 🌐 Website Visitor Ping
+on:
+  schedule:
+    # Runs at 00:00 UTC and 12:00 UTC every day (twice a day)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # Lets you run it manually
+
+jobs:
+  ping-website:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📡 Visit the homepage
+        run: |
+          URL="https://luyanda-portfolio.vercel.app/"  
+          echo "Making a visit to: $URL"
+          
+          # Make the request and capture the HTTP status code
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L "$URL")
+          
+          echo "HTTP Response Code: $STATUS"
+          
+          # A 200-399 status code generally means success
+          if [[ $STATUS -ge 200 && $STATUS -lt 400 ]]; then
+            echo "✅ Visit successful. Website is reachable."
+          else
+            echo "⚠️  Got an unexpected status code: $STATUS"
+            # We don't 'exit 1' here, so a single failed ping won't break the workflow
+          fi
